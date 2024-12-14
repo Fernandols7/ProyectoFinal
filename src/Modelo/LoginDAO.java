@@ -1,4 +1,3 @@
-
 package Modelo;
 
 import java.sql.Connection;
@@ -11,8 +10,8 @@ import java.sql.SQLException;
  * @author Fernando Lopez
  */
 public class LoginDAO {
-    
-Connection con;
+
+    Connection con;
     PreparedStatement ps;
     ResultSet rs;
     Conexion cn = new Conexion();
@@ -29,9 +28,9 @@ Connection con;
 
             if (rs.next()) {
                 l.setId(rs.getInt("id"));
-                l.setNombre(rs.getString("nombre")); 
-                l.setUsuario(rs.getString("usuario")); 
-                l.setPass(rs.getString("pass"));   
+                l.setNombre(rs.getString("nombre"));
+                l.setUsuario(rs.getString("usuario"));
+                l.setPass(rs.getString("pass"));
             }
         } catch (SQLException e) {
             System.out.println(e.toString());

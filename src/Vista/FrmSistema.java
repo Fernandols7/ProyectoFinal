@@ -9,6 +9,7 @@ import Modelo.Cliente;
 import Modelo.ClienteDao;
 import Modelo.Config;
 import Modelo.Detalle;
+import Modelo.NumLetras;
 import Modelo.Productos;
 import Modelo.ProductosDao;
 import Modelo.Proveedor;
@@ -30,11 +31,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import java.awt.Desktop;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import static java.util.stream.Collectors.toList;
-import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
@@ -44,15 +41,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Fernando Lopez
  */
-public class Sistema extends javax.swing.JFrame {
+public class FrmSistema extends javax.swing.JFrame {
 
     /**
-     * Creates new form Sistema
+     * Creates new form FrmSistema
      */
     Cliente cl = new Cliente();
     ClienteDao client = new ClienteDao();
@@ -65,12 +64,12 @@ public class Sistema extends javax.swing.JFrame {
     VentaDao Vdao = new VentaDao();
     Detalle Dv = new Detalle();
     Config conf = new Config();
-
+    NumLetras nl = new NumLetras();
     DefaultTableModel tmp = new DefaultTableModel();
     int item;
     double Totalpagar = 0.00;
 
-    public Sistema() {
+    public FrmSistema() {
         initComponents();
 
         this.setLocationRelativeTo(null);
@@ -138,6 +137,22 @@ public class Sistema extends javax.swing.JFrame {
         tableProducto.setModel(modelo);
     }
 
+    public void ListarVentas() {
+        List<Venta> ListarVenta = Vdao.ListarVentasPDF();
+        modelo = (DefaultTableModel) tableVentas.getModel();
+        modelo.setRowCount(0);
+
+        Object[] ob = new Object[4];
+        for (int i = 0; i < ListarVenta.size(); i++) {
+            ob[0] = ListarVenta.get(i).getId();
+            ob[1] = ListarVenta.get(i).getCliente();
+            ob[2] = ListarVenta.get(i).getVendedor();
+            ob[3] = ListarVenta.get(i).getTotal();
+            modelo.addRow(ob);
+        }
+        tableVentas.setModel(modelo);
+    }
+    
     public void ListarConfig() {
         conf = proDao.BuscarDatos();
         txtIdConfig.setText("" + conf.getId());
@@ -256,7 +271,6 @@ public class Sistema extends javax.swing.JFrame {
         txtTelefonoConfig = new javax.swing.JTextField();
         txtDireccionConfig = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
-        btnActualizarConfig = new javax.swing.JButton();
         txtIdConfig = new javax.swing.JTextField();
         LabelVendedor = new javax.swing.JLabel();
 
@@ -273,9 +287,14 @@ public class Sistema extends javax.swing.JFrame {
         btnConfig.setFont(new java.awt.Font("Roboto Light", 1, 18)); // NOI18N
         btnConfig.setForeground(new java.awt.Color(255, 255, 255));
         btnConfig.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/Configuracion.png"))); // NOI18N
-        btnConfig.setText("configuracion");
+        btnConfig.setText("Información");
         btnConfig.setBorder(null);
         btnConfig.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnConfig.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnConfigActionPerformed(evt);
+            }
+        });
         jPanel2.add(btnConfig, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 510, 210, 60));
 
         btnNuevaVenta.setBackground(new java.awt.Color(102, 102, 102));
@@ -373,12 +392,16 @@ public class Sistema extends javax.swing.JFrame {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 txtCodigoVentaKeyPressed(evt);
             }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtCodigoVentaKeyTyped(evt);
+            }
         });
 
         jLabel9.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
         jLabel9.setForeground(new java.awt.Color(0, 0, 0));
         jLabel9.setText("DESCRIPCION");
 
+        txtDescripcionVenta.setEditable(false);
         txtDescripcionVenta.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
         jLabel10.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
@@ -395,14 +418,19 @@ public class Sistema extends javax.swing.JFrame {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 txtCantidadVentaKeyPressed(evt);
             }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtCantidadVentaKeyTyped(evt);
+            }
         });
 
         jLabel11.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
         jLabel11.setForeground(new java.awt.Color(0, 0, 0));
         jLabel11.setText("PRECIO");
 
+        txtPrecioVenta.setEditable(false);
         txtPrecioVenta.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
+        txtStockDisponible.setEditable(false);
         txtStockDisponible.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
         TableVenta.setModel(new javax.swing.table.DefaultTableModel(
@@ -463,6 +491,9 @@ public class Sistema extends javax.swing.JFrame {
         txtIdentidad.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 txtIdentidadKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtIdentidadKeyTyped(evt);
             }
         });
 
@@ -603,6 +634,24 @@ public class Sistema extends javax.swing.JFrame {
         jLabel15.setForeground(new java.awt.Color(0, 0, 0));
         jLabel15.setText("DIRECCION");
 
+        txtDniCliente.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtDniClienteKeyTyped(evt);
+            }
+        });
+
+        txtNombreCliente.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtNombreClienteKeyTyped(evt);
+            }
+        });
+
+        txtTelefonoCliente.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtTelefonoClienteKeyTyped(evt);
+            }
+        });
+
         tableCliente.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
@@ -736,6 +785,18 @@ public class Sistema extends javax.swing.JFrame {
         jLabel21.setForeground(new java.awt.Color(0, 0, 0));
         jLabel21.setText("RTN");
 
+        txtRtnProveedor.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtRtnProveedorKeyTyped(evt);
+            }
+        });
+
+        txtNombreProveedor.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtNombreProveedorKeyTyped(evt);
+            }
+        });
+
         jLabel22.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
         jLabel22.setForeground(new java.awt.Color(0, 0, 0));
         jLabel22.setText("NOMBRE");
@@ -743,6 +804,12 @@ public class Sistema extends javax.swing.JFrame {
         jLabel23.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
         jLabel23.setForeground(new java.awt.Color(0, 0, 0));
         jLabel23.setText("TELEFONO");
+
+        txtTelefonoProveedor.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtTelefonoProveedorKeyTyped(evt);
+            }
+        });
 
         jLabel24.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
         jLabel24.setForeground(new java.awt.Color(0, 0, 0));
@@ -883,6 +950,11 @@ public class Sistema extends javax.swing.JFrame {
         jLabel25.setText("CODIGO");
 
         txtCodigoPro.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
+        txtCodigoPro.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtCodigoProKeyTyped(evt);
+            }
+        });
 
         txtDesPro.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
@@ -895,8 +967,18 @@ public class Sistema extends javax.swing.JFrame {
         jLabel27.setText("CANTIDAD");
 
         txtCantPro.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
+        txtCantPro.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtCantProKeyTyped(evt);
+            }
+        });
 
         txtPrecioPro.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
+        txtPrecioPro.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtPrecioProKeyTyped(evt);
+            }
+        });
 
         jLabel28.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
         jLabel28.setForeground(new java.awt.Color(0, 0, 0));
@@ -1071,6 +1153,11 @@ public class Sistema extends javax.swing.JFrame {
                 "ID", "CLIENTE", "VENDEDOR", "TOTAL"
             }
         ));
+        tableVentas.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tableVentasMouseClicked(evt);
+            }
+        });
         jScrollPane6.setViewportView(tableVentas);
         if (tableVentas.getColumnModel().getColumnCount() > 0) {
             tableVentas.getColumnModel().getColumn(0).setPreferredWidth(20);
@@ -1081,6 +1168,11 @@ public class Sistema extends javax.swing.JFrame {
 
         btnPdfVentas.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/pdf.png"))); // NOI18N
         btnPdfVentas.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnPdfVentas.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnPdfVentasActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
@@ -1121,6 +1213,7 @@ public class Sistema extends javax.swing.JFrame {
         jLabel30.setForeground(new java.awt.Color(0, 0, 0));
         jLabel30.setText("RTN");
 
+        txtRtnConfig.setEditable(false);
         txtRtnConfig.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
         jLabel31.setFont(new java.awt.Font("Roboto Medium", 0, 14)); // NOI18N
@@ -1135,19 +1228,23 @@ public class Sistema extends javax.swing.JFrame {
         jLabel33.setForeground(new java.awt.Color(0, 0, 0));
         jLabel33.setText("DIRECCION");
 
+        txtNombreConfig.setEditable(false);
         txtNombreConfig.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
+        txtNombreConfig.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtNombreConfigActionPerformed(evt);
+            }
+        });
 
+        txtTelefonoConfig.setEditable(false);
         txtTelefonoConfig.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
+        txtDireccionConfig.setEditable(false);
         txtDireccionConfig.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
         jLabel3.setFont(new java.awt.Font("Roboto", 1, 24)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(0, 0, 0));
         jLabel3.setText("DATOS DE LA EMPRESA");
-
-        btnActualizarConfig.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/actualizar.png"))); // NOI18N
-        btnActualizarConfig.setText("Actualizar");
-        btnActualizarConfig.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
         txtIdConfig.setFont(new java.awt.Font("Roboto", 0, 14)); // NOI18N
 
@@ -1173,9 +1270,7 @@ public class Sistema extends javax.swing.JFrame {
                         .addComponent(jLabel31, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 11, Short.MAX_VALUE))
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(btnActualizarConfig)
-                            .addComponent(txtNombreConfig, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(txtNombreConfig, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(txtTelefonoConfig)))
                 .addGap(18, 18, 18)
@@ -1203,13 +1298,11 @@ public class Sistema extends javax.swing.JFrame {
                     .addComponent(txtTelefonoConfig, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtDireccionConfig, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(52, 52, 52)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnActualizarConfig, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txtIdConfig, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addComponent(txtIdConfig, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(100, Short.MAX_VALUE))
         );
 
-        jTabbedPane2.addTab("Configuracion", jPanel3);
+        jTabbedPane2.addTab("Información", jPanel3);
 
         jPanel1.add(jTabbedPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 190, 770, 380));
         jPanel1.add(LabelVendedor, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 160, -1, -1));
@@ -1281,7 +1374,7 @@ public class Sistema extends javax.swing.JFrame {
     private void btnEditarClienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarClienteActionPerformed
         // TODO add your handling code here:
         if ("".equals(txtIdCliente.getText())) {
-            JOptionPane.showMessageDialog(null, "Seleccione una cliente de la lista");
+            JOptionPane.showMessageDialog(null, "Seleccione un cliente de la lista");
         } else {
 
             cl.setDni(txtDniCliente.getText());
@@ -1622,14 +1715,21 @@ public class Sistema extends javax.swing.JFrame {
 
     private void btnGenerarVentaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarVentaActionPerformed
         // TODO add your handling code here:
+        if (TableVenta.getRowCount() > 0) {
+            if (!"".equals(txtNombreClienteVenta.getText())) {
+                RegistrarDetalle();
+                RegistrarVenta();
+                ActualizarStock();
+                pdf();
+                LimpiarTableVenta();
+                LimpiarClienteVenta();
+            } else {
+                JOptionPane.showMessageDialog(null, "Debes seleccionar un cliente");
+            }
 
-        RegistrarDetalle();
-        RegistrarVenta();
-        ActualizarStock();
-        pdf();
-        LimpiarTableVenta();
-        LimpiarClienteVenta();
-
+        } else {
+            JOptionPane.showMessageDialog(null, "Ingrese un producto");
+        }
     }//GEN-LAST:event_btnGenerarVentaActionPerformed
 
     private void btnExcelProActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcelProActionPerformed
@@ -1644,11 +1744,99 @@ public class Sistema extends javax.swing.JFrame {
 
     private void btnVentasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVentasActionPerformed
         // TODO add your handling code here:
+        jTabbedPane2.setSelectedIndex(4);
+        ListarVentas();
     }//GEN-LAST:event_btnVentasActionPerformed
 
     private void txtCantidadVentaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtCantidadVentaActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtCantidadVentaActionPerformed
+
+    private void txtCodigoVentaKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCodigoVentaKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtCodigoVentaKeyTyped
+
+    private void txtCantidadVentaKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCantidadVentaKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtCantidadVentaKeyTyped
+
+    private void txtIdentidadKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtIdentidadKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtIdentidadKeyTyped
+
+    private void txtDniClienteKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtDniClienteKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtDniClienteKeyTyped
+
+    private void txtNombreClienteKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNombreClienteKeyTyped
+        // TODO add your handling code here:
+        nl.SoloLetras(evt);
+    }//GEN-LAST:event_txtNombreClienteKeyTyped
+
+    private void txtTelefonoClienteKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtTelefonoClienteKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtTelefonoClienteKeyTyped
+
+    private void txtRtnProveedorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtRtnProveedorKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtRtnProveedorKeyTyped
+
+    private void txtNombreProveedorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNombreProveedorKeyTyped
+        // TODO add your handling code here:
+        nl.SoloLetras(evt);
+    }//GEN-LAST:event_txtNombreProveedorKeyTyped
+
+    private void txtTelefonoProveedorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtTelefonoProveedorKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtTelefonoProveedorKeyTyped
+
+    private void txtCodigoProKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCodigoProKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtCodigoProKeyTyped
+
+    private void txtCantProKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCantProKeyTyped
+        // TODO add your handling code here:
+        nl.SoloNumeros(evt);
+    }//GEN-LAST:event_txtCantProKeyTyped
+
+    private void txtPrecioProKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtPrecioProKeyTyped
+        // TODO add your handling code here:
+        nl.NumerosDecimales(evt, txtPrecioPro);
+    }//GEN-LAST:event_txtPrecioProKeyTyped
+
+    private void btnConfigActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfigActionPerformed
+        // TODO add your handling code here:
+        jTabbedPane2.setSelectedIndex(5);
+    }//GEN-LAST:event_btnConfigActionPerformed
+
+    private void tableVentasMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tableVentasMouseClicked
+        // TODO add your handling code here:
+        int fila = tableVentas.rowAtPoint(evt.getPoint());
+        txtIdVenta.setText(tableVentas.getValueAt(fila, 0).toString());
+    }//GEN-LAST:event_tableVentasMouseClicked
+
+    private void btnPdfVentasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPdfVentasActionPerformed
+        // TODO add your handling code here:
+        try {
+            int id = Integer.parseInt(txtIdVenta.getText());
+            File file = new File("src/pdf/venta" + id + ".pdf"); 
+            Desktop.getDesktop().open(file);
+        } catch (IOException ex) {
+            Logger.getLogger(FrmSistema.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_btnPdfVentasActionPerformed
+
+    private void txtNombreConfigActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNombreConfigActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtNombreConfigActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1667,26 +1855,26 @@ public class Sistema extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Sistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(FrmSistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Sistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(FrmSistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Sistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(FrmSistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Sistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(FrmSistema.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(() -> {
-            new Sistema().setVisible(true);
+            new FrmSistema().setVisible(true);
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel LabelVendedor;
     private javax.swing.JTable TableVenta;
-    private javax.swing.JButton btnActualizarConfig;
     private javax.swing.JButton btnActualizarProveedor;
     private javax.swing.JButton btnClientes;
     private javax.swing.JButton btnConfig;
@@ -1840,7 +2028,6 @@ public class Sistema extends javax.swing.JFrame {
     private void RegistrarVenta() {
         String cliente = txtNombreClienteVenta.getText();
         String vendedor = LabelVendedor.getText();
-        //double monto = Totalpagar;
         double monto = Totalpagar + (Totalpagar * 0.15);
         v.setCliente(cliente);
         v.setVendedor(vendedor);
@@ -1925,7 +2112,7 @@ public class Sistema extends javax.swing.JFrame {
 
             Paragraph cli = new Paragraph();
             cli.add(Chunk.NEWLINE);
-            cli.add("Datos de los clientes" + "\n\n");
+            cli.add("Datos del cliente" + "\n\n");
             doc.add(cli);
 
             // Venta
@@ -1991,13 +2178,13 @@ public class Sistema extends javax.swing.JFrame {
             }
             doc.add(tablapro);
 
-            double totalSinIsv = Totalpagar; 
-            double impuesto = totalSinIsv * 0.15; 
-            double totalConImpuestos = totalSinIsv + impuesto; 
-            
+            double totalSinIsv = Totalpagar;
+            double impuesto = totalSinIsv * 0.15;
+            double totalConImpuestos = totalSinIsv + impuesto;
+
             Paragraph info = new Paragraph();
             info.add(Chunk.NEWLINE);
-            info.add("Total a Pagar (15% ISV): " + String.format("%.2f", totalConImpuestos)); 
+            info.add("Total a Pagar (15% ISV): " + String.format("%.2f", totalConImpuestos));
             info.setAlignment(Element.ALIGN_RIGHT);
             doc.add(info);
 

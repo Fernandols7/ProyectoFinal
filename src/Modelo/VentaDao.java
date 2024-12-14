@@ -4,8 +4,8 @@ import java.sql.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -18,8 +18,8 @@ public class VentaDao {
     PreparedStatement ps;
     ResultSet rs;
     int r;
-    
-    public int IdVenta(){
+
+    public int IdVenta() {
         int id = 0;
         String sql = "SELECT MAX(id) FROM ventas";
         try {
@@ -34,7 +34,6 @@ public class VentaDao {
         }
         return id;
     }
-
 
     public int RegistrarVenta(Venta v) {
         String sql = "INSERT INTO ventas (cliente, vendedor, total) VALUES (?,?,?)";
@@ -79,8 +78,8 @@ public class VentaDao {
         }
         return r;
     }
-    
-        public boolean ActualizarStock(int cant, String cod){
+
+    public boolean ActualizarStock(int cant, String cod) {
         String sql = "UPDATE productos SET stock = ? WHERE codigo = ?";
         try {
             con = cn.getConnection();
@@ -95,4 +94,24 @@ public class VentaDao {
         }
     }
 
+    public List ListarVentasPDF() {
+        List<Venta> ListaVenta = new ArrayList();
+        String sql = "SELECT * FROM ventas";
+        try {
+            con = cn.getConnection();
+            ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                Venta vent = new Venta();
+                vent.setId(rs.getInt("id"));
+                vent.setCliente(rs.getString("cliente"));
+                vent.setVendedor(rs.getString("vendedor"));
+                vent.setTotal(rs.getDouble("total"));
+                ListaVenta.add(vent);
+            }
+        } catch (SQLException e) {
+            System.out.println(e.toString());
+        }
+        return ListaVenta;
+    }
 }
