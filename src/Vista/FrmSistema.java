@@ -81,8 +81,8 @@ public class FrmSistema extends javax.swing.JFrame {
         txtDireccionCV.setVisible(false);
         txtIdConfig.setVisible(false);
         AutoCompleteDecorator.decorate(cbxProveedorPro);
-        proDao.ConsultarProveedor(cbxProveedorPro);
-        ListarConfig();
+        proDao.ConsultarProveedor(cbxProveedorPro); 
+       ListarConfig();
     }
 
     public void ListarCliente() {
